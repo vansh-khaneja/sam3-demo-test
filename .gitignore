@@ -1,0 +1,7 @@
+sam3.pt
+.env
+venv/
+__pycache__/
+node_modules/
+.next/
+.DS_Store
