@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 
-const API_URL = "http://localhost:8000";
+const API_URL = "https://px9zo05g6n5x26-3000.proxy.runpod.net";
 
 type Bbox = { x1: number; y1: number; x2: number; y2: number };
 type Result = { prompt: string; count: number; colorIdx: number };
@@ -192,11 +192,17 @@ export default function Home() {
       fd.append("base_image", resultBlobRef.current, "base.png");
     }
 
+    console.log("Bounding box selected:", b);
+    console.log("File upload complete. FormData keys:", Array.from(fd.keys()));
+
     try {
+      const startTime = Date.now();
       const res = await fetch(`${API_URL}/auto-segment`, {
         method: "POST",
         body: fd,
       });
+      const endTime = Date.now();
+      console.log("API /auto-segment time:", endTime - startTime, "ms");
       stopPulse();
       const canvas = canvasRef.current;
       const ctx = canvas?.getContext("2d");
