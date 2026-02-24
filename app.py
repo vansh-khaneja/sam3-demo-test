@@ -102,6 +102,7 @@ async def segment(
     contents = await image.read()
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    print(f"[auto-segment] Uploaded image: {len(contents)} bytes, shape: {img.shape}, dtype: {img.dtype}")
 
     predictor.args.conf = conf
     predictor.set_image(img)
@@ -167,8 +168,16 @@ async def auto_segment(
     # Run SAM3 on ORIGINAL image
     start_sam = time.time()
     predictor.args.conf = conf
+    sam_set_image_start = time.time()
+    print(f"[auto-segment] predictor.set_image(img) START")
     predictor.set_image(img)
+    sam_set_image_end = time.time()
+    print(f"[auto-segment] predictor.set_image(img) END: {sam_set_image_end - sam_set_image_start:.3f}s")
+    sam_predict_start = time.time()
+    print(f"[auto-segment] predictor(text=[description]) START")
     results = predictor(text=[description])
+    sam_predict_end = time.time()
+    print(f"[auto-segment] predictor(text=[description]) END: {sam_predict_end - sam_predict_start:.3f}s")
     end_sam = time.time()
     print(f"[auto-segment] SAM3 inference: {end_sam - start_sam:.3f}s")
 
