@@ -16,7 +16,7 @@ app = FastAPI(title="SAM3 Segmentation API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000", "https://px9zo05g6n5x26-3000.proxy.runpod.net"],
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["X-Segments", "X-Contours", "X-Prompt"],
