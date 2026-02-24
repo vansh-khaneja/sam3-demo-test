@@ -137,36 +137,57 @@ async def auto_segment(
     conf: float = Form(0.65),
     color_index: int = Form(0),
 ):
+    import time
+    start_total = time.time()
+    start_read = time.time()
     contents = await image.read()
+    end_read = time.time()
     nparr = np.frombuffer(contents, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    print(f"[auto-segment] Image read: {end_read - start_read:.3f}s")
 
     # Use base_image for overlay if provided (accumulate mode)
+    start_base = time.time()
     if base_image:
         base_contents = await base_image.read()
         base_nparr = np.frombuffer(base_contents, np.uint8)
         overlay_base = cv2.imdecode(base_nparr, cv2.IMREAD_COLOR)
     else:
         overlay_base = img
+    end_base = time.time()
+    print(f"[auto-segment] Base image read: {end_base - start_base:.3f}s")
 
     # Crop bbox region from ORIGINAL image and get description
+    start_crop = time.time()
     cropped = img[y1:y2, x1:x2]
     description = describe_crop(cropped)
+    end_crop = time.time()
+    print(f"[auto-segment] Crop & describe: {end_crop - start_crop:.3f}s")
 
     # Run SAM3 on ORIGINAL image
+    start_sam = time.time()
     predictor.args.conf = conf
     predictor.set_image(img)
     results = predictor(text=[description])
+    end_sam = time.time()
+    print(f"[auto-segment] SAM3 inference: {end_sam - start_sam:.3f}s")
 
     if not results or results[0].masks is None:
         return {"error": "No masks detected", "prompt": description}
 
     # Overlay masks on base_image (which may have previous results)
+    start_overlay = time.time()
     mask_img, num_masks, num_contours = make_overlay(
         overlay_base, results[0].masks.data.cpu().numpy(), color_index
     )
+    end_overlay = time.time()
+    print(f"[auto-segment] Overlay masks: {end_overlay - start_overlay:.3f}s")
 
+    start_encode = time.time()
     _, buffer = cv2.imencode(".png", mask_img)
+    end_encode = time.time()
+    print(f"[auto-segment] PNG encode: {end_encode - start_encode:.3f}s")
+    print(f"[auto-segment] Total time: {time.time() - start_total:.3f}s")
     return Response(
         content=buffer.tobytes(),
         media_type="image/png",
